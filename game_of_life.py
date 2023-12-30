@@ -1,5 +1,4 @@
 import numpy as np
-from matplotlib import pyplot
 
 from cellular_engine import Engine
 from cellular_engine.renderer import Renderer
