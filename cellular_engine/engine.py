@@ -15,13 +15,14 @@ class RetrievalMode(Enum):
 class Engine:
 
     def __init__(self,
-                 grid: np.ndarray,
+                 grid: np.ndarray | Callable[[], np.ndarray],
                  rules: list[Rule],
                  *,
                  neighbourhood_shape: tuple[int, ...] = (3, 3),
                  retrieval_mode: RetrievalMode = RetrievalMode.WRAPPING):
 
-        self.grid = grid
+        self._grid_generator = (lambda: grid) if isinstance(grid, np.ndarray) else grid
+        self.grid = self._grid_generator()
         self.rules = rules
         self.neighbourhood_shape = neighbourhood_shape
         self.retrieval_mode = retrieval_mode
@@ -42,6 +43,10 @@ class Engine:
 
             self.grid = updated_grid
             yield step, self.grid
+
+    def reset_grid(self):
+        self.grid = self._grid_generator()
+
 
     def _get_neighbourhood(self, index: tuple[int, ...]) -> np.ndarray:
 

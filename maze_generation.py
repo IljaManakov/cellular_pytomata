@@ -13,6 +13,6 @@ def deactivate(neighbourhood: np.ndarray) -> float | None:
     return 0. if (sum := neighbourhood.sum()) < 1 or sum > 5 else None
 
 
-engine = Engine(np.random.randint(0, 2, (64, 64)), [activate, deactivate])
+engine = Engine(lambda: np.random.rand(64, 64) > 0.95, [activate, deactivate])
 renderer = Renderer(engine)
 renderer.start()

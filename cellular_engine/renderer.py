@@ -48,3 +48,5 @@ class Renderer:
 
         if event.key == 'q':
             plt.close()
+        if event.key == 'r':
+            self.engine.reset_grid()
