@@ -8,6 +8,8 @@ class Renderer:
         self.engine = engine
         self.engine_iterator = iter(engine)
         self.paused = True
+        self.adding_cells = False
+        self._last_index = None
         self.figure, self.axes = plt.subplots(1, 1, figsize=(6, 6))
         self.canvas = self.figure.canvas
         self.timer = self.canvas.new_timer(interval=1)
@@ -17,6 +19,7 @@ class Renderer:
         x, y = np.meshgrid(range(grid_shape[0]), range(grid_shape[1]))
         self.points = self.axes.scatter(x, y, marker='s')
         self.points.set_array(engine.grid.flat)
+        self.points.set_cmap('inferno')
 
         self.axes.get_xaxis().set_visible(False)
         self.axes.get_yaxis().set_visible(False)
@@ -25,6 +28,9 @@ class Renderer:
 
         self.timer.add_callback(self._run_step)
         self.canvas.mpl_connect('key_press_event', self._handle_key_press)
+        self.canvas.mpl_connect('button_press_event', lambda event: setattr(self, 'adding_cells', True))
+        self.canvas.mpl_connect('button_release_event', lambda event: setattr(self, 'adding_cells', False))
+        self.canvas.mpl_connect('motion_notify_event', self._handle_mouse_interaction)
         self.canvas.mpl_connect('draw_event', lambda event: setattr(self, 'background', None))
 
     def start(self):
@@ -61,3 +67,22 @@ class Renderer:
                 self.paused = False
                 self._run_step()
                 self.paused = True
+
+    def _handle_mouse_interaction(self, event):
+
+        if not self.paused and not (self.adding_cells or self.adding_cells):
+            return
+
+        if not event.inaxes:
+            return
+        x, y = int(event.xdata), int(event.ydata)
+        index = y * self.engine.grid.shape[0] + x
+        if index == self._last_index:
+            return
+
+        if self.adding_cells:
+            grid = self.engine.grid.ravel()
+            grid[index] = 1
+            self.engine.grid = grid.reshape(self.engine.grid.shape)
+            self.points.set_array(grid / grid.max())
+            self.draw()
