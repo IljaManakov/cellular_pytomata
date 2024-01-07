@@ -30,6 +30,7 @@ class Renderer:
     def start(self):
         self.timer.start()
         plt.show()
+        self.canvas.mpl_connect('close_event', plt.close())
 
     def _run_step(self):
         if self.paused:
@@ -37,7 +38,10 @@ class Renderer:
 
         self.canvas.restore_region(self.canvas.copy_from_bbox(self.axes.bbox))
         step, grid = next(self.engine_iterator)
-        self.points.set_array(grid.flat)
+        self.points.set_array(grid.flat / grid.max())
+        self.draw()
+
+    def draw(self):
         self.axes.draw_artist(self.points)
         self.figure.canvas.blit(self.axes.bbox)
         self.canvas.flush_events()
@@ -50,3 +54,10 @@ class Renderer:
             plt.close()
         if event.key == 'r':
             self.engine.reset_grid()
+            self.points.set_array(self.engine.grid.flat)
+            self.draw()
+        if event.key == 'right':
+            if self.paused:
+                self.paused = False
+                self._run_step()
+                self.paused = True

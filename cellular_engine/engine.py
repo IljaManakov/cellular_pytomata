@@ -47,7 +47,6 @@ class Engine:
     def reset_grid(self):
         self.grid = self._grid_generator()
 
-
     def _get_neighbourhood(self, index: tuple[int, ...]) -> np.ndarray:
 
         dimensionality = self.grid.ndim
@@ -65,6 +64,3 @@ class Engine:
             neighbourhood[indices < 0 | indices > index_cap_per_dim] = 0
 
         return neighbourhood
-
-    def start(self):
-        pass
