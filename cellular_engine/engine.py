@@ -26,6 +26,9 @@ class Engine:
         self.rules = rules
         self.neighbourhood_shape = neighbourhood_shape
         self.retrieval_mode = retrieval_mode
+        self.neighbourhood_indices = np.indices(self.neighbourhood_shape)
+        self.index_cap_per_dim = np.array(self.grid.shape)
+        self.index_cap_per_dim = self.index_cap_per_dim[..., *([None] * self.grid.ndim)]
 
     def __iter__(self) -> Generator[tuple[int, np.ndarray], None, None]:
         iterator = itertools.count()
@@ -49,18 +52,13 @@ class Engine:
 
     def _get_neighbourhood(self, index: tuple[int, ...]) -> np.ndarray:
 
-        dimensionality = self.grid.ndim
-        indices = np.indices(self.neighbourhood_shape)
         offsets = (np.array(index) - np.array(self.neighbourhood_shape) // 2)
-        index_cap_per_dim = np.array(self.grid.shape)
 
         # we need to add dimensions to allow proper broadcasting
-        offsets = offsets[..., *([None] * dimensionality)]
-        index_cap_per_dim = index_cap_per_dim[..., *([None] * dimensionality)]
-
-        neighbourhood = self.grid[*((indices + offsets) % index_cap_per_dim)]
+        offsets = offsets[..., *([None] * self.grid.ndim)]
+        neighbourhood = self.grid[*((self.neighbourhood_indices + offsets) % self.index_cap_per_dim)]
 
         if self.retrieval_mode is not RetrievalMode.WRAPPING:
-            neighbourhood[indices < 0 | indices > index_cap_per_dim] = 0
+            neighbourhood[self.neighbourhood_indices < 0 | self.neighbourhood_indices > self.index_cap_per_dim] = 0
 
         return neighbourhood
