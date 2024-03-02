@@ -1,3 +1,4 @@
+from __future__ import annotations
 import itertools
 from enum import Enum
 from typing import Callable, Generator
@@ -10,6 +11,39 @@ Rule = Callable[[np.ndarray], float | None]
 class RetrievalMode(Enum):
     WRAPPING: str = 'wrapping'
     PADDED: str = 'padded'
+
+
+class Cell:
+
+    __slots__ = ('state', 'position', 'neighborhood')
+
+    def __init__(self,
+                 state: list[float, ...],
+                 position: tuple[int, ...],
+                 neighbors: set[Cell] | None = None) -> None:
+
+        #: State of the cell that can change over time.
+        self.state = state
+
+        #: Position of the cell in the grid represented by a tuple of indices in row-major order
+        self.position = position
+
+        #: Set of neighboring cells.
+        #:
+        #: ..note:
+        #:
+        #:   Although sets are insertion-ordered in Python, one should not rely on this representing an ordering of neighbors here
+        #:   e.g. top-left to bottom right.
+        #:   This is because cells can be arranged into arbitrary grids.
+        #:   Instead, if one is interested in a specific subset of neighbors (e.g. all neighbors left of the cell),
+        #:   one should utilize the :attr:`~cellular_pytomata.Cell.position` attribute.
+        self.neighborhood = neighbors or []
+
+
+class Grid:
+
+    def __init__(self, shape: tuple[int, ...]):
+        pass
 
 
 class Engine:
