@@ -30,7 +30,7 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - uses: chartboost/ruff-action@v1
       with:
-        args: --fix --line_length=120
+        args: --fix --line-length=120
     - name: Test with pytest
       run: |
         pytest
