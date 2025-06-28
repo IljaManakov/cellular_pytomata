@@ -2,7 +2,21 @@ import itertools
 from enum import Enum
 from typing import Callable, Generator, Protocol
 
+import numba
 import numpy as np
+
+
+@numba.jit
+def _get_neighborhood(grid: np.ndarray, neighborhood_indices: np.ndarray, index_cap_per_dim: np.ndarray, index: np.ndarray) -> np.ndarray:
+    shape = neighborhood_indices.shape[1:]
+    neighborhood_indices = (neighborhood_indices + index) % index_cap_per_dim
+    rows, columns = neighborhood_indices.reshape(2, -1)
+    neighborhood = grid.ravel()[columns + rows*grid.shape[1]].reshape(shape)
+
+    # if retrieval_mode is not RetrievalMode.WRAPPING:
+    #     neighborhood[neighborhood_indices < 0 | neighborhood_indices > index_cap_per_dim] = 0
+
+    return neighborhood
 
 
 class Rules(Protocol):
@@ -21,15 +35,15 @@ class Engine:
                  grid: np.ndarray | Callable[[], np.ndarray],
                  rules: Rules,
                  *,
-                 neighbourhood_shape: tuple[int, ...] = (3, 3),
+                 neighborhood_shape: tuple[int, ...] = (3, 3),
                  retrieval_mode: RetrievalMode = RetrievalMode.WRAPPING):
 
         self._grid_generator = (lambda: grid) if isinstance(grid, np.ndarray) else grid
         self.grid = self._grid_generator()
         self.rules = rules
-        self.neighbourhood_shape = neighbourhood_shape
         self.retrieval_mode = retrieval_mode
-        self.neighbourhood_indices = np.indices(self.neighbourhood_shape)
+        self.neighborhood_indices = np.indices(neighborhood_shape)
+        self.neighborhood_indices -= np.array(neighborhood_shape)[..., *((None,)*len(neighborhood_shape))] // 2
         self.index_cap_per_dim = np.array(self.grid.shape)
         self.index_cap_per_dim = self.index_cap_per_dim[..., *([None] * self.grid.ndim)]
 
@@ -40,24 +54,12 @@ class Engine:
             updated_grid = np.zeros_like(self.grid)
             for index in itertools.product(*[range(dim) for dim in self.grid.shape]):
                 current_state = self.grid[*index]
-                neighbourhood = self._get_neighbourhood(index)
-                updated_grid[*index] = self.rules(neighbourhood, current_state)
+                shape = self.neighborhood_indices.shape[1:]
+                neighborhood = _get_neighborhood(self.grid, self.neighborhood_indices, self.index_cap_per_dim, np.array(index)[..., *((None,)*len(shape))])
+                updated_grid[*index] = self.rules(neighborhood, current_state)
 
             self.grid = updated_grid
             yield step, self.grid
 
     def reset_grid(self):
         self.grid = self._grid_generator()
-
-    def _get_neighbourhood(self, index: tuple[int, ...]) -> np.ndarray:
-
-        offsets = (np.array(index) - np.array(self.neighbourhood_shape) // 2)
-
-        # we need to add dimensions to allow proper broadcasting
-        offsets = offsets[..., *([None] * self.grid.ndim)]
-        neighbourhood = self.grid[*((self.neighbourhood_indices + offsets) % self.index_cap_per_dim)]
-
-        if self.retrieval_mode is not RetrievalMode.WRAPPING:
-            neighbourhood[self.neighbourhood_indices < 0 | self.neighbourhood_indices > self.index_cap_per_dim] = 0
-
-        return neighbourhood
