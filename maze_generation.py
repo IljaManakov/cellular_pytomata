@@ -1,7 +1,7 @@
 import numpy as np
 
 from cellular_pytomata import Engine
-from cellular_pytomata.renderer import Renderer
+from cellular_pytomata.renderer import MatplotlibRenderer as Renderer
 
 
 def activate(neighbourhood: np.ndarray) -> float | None:

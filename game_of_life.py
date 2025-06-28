@@ -1,7 +1,7 @@
 import numpy as np
 
 from cellular_pytomata import Engine
-from cellular_pytomata.renderer import Renderer
+from cellular_pytomata.renderer import SDLRenderer as Renderer
 
 
 def overpopulation(neighbourhood: np.ndarray) -> float | None:

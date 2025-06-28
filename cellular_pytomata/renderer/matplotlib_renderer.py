@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-class Renderer:
+class MatplotlibRenderer:
 
     def __init__(self, engine):
         self.engine = engine
