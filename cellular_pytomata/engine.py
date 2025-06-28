@@ -1,10 +1,13 @@
 import itertools
 from enum import Enum
-from typing import Callable, Generator
+from typing import Callable, Generator, Protocol
 
 import numpy as np
 
-Rule = Callable[[np.ndarray], float | None]
+
+class Rules(Protocol):
+
+    def __call__(self, neighborhood: np.ndarray, current_state: int) -> int: ...
 
 
 class RetrievalMode(Enum):
@@ -16,7 +19,7 @@ class Engine:
 
     def __init__(self,
                  grid: np.ndarray | Callable[[], np.ndarray],
-                 rules: list[Rule],
+                 rules: Rules,
                  *,
                  neighbourhood_shape: tuple[int, ...] = (3, 3),
                  retrieval_mode: RetrievalMode = RetrievalMode.WRAPPING):
@@ -36,13 +39,9 @@ class Engine:
         for step in iterator:
             updated_grid = np.zeros_like(self.grid)
             for index in itertools.product(*[range(dim) for dim in self.grid.shape]):
+                current_state = self.grid[*index]
                 neighbourhood = self._get_neighbourhood(index)
-                for rule in self.rules:
-                    if (result := rule(neighbourhood)) is not None:
-                        updated_grid[*index] = result
-                        break
-                else:
-                    updated_grid[*index] = self.grid[*index]
+                updated_grid[*index] = self.rules(neighbourhood, current_state)
 
             self.grid = updated_grid
             yield step, self.grid
