@@ -15,7 +15,7 @@ def reproduction(neighbourhood: np.ndarray) -> float | None:
 def underpopulation(neighbourhood: np.ndarray) -> float | None:
     return 0. if neighbourhood.sum() < 2 else None
 
-
-engine = Engine(np.random.randint(0, 2, (64, 64)), [overpopulation, reproduction, underpopulation])
+WINDOW_SIZE = 128
+engine = Engine(np.random.randint(0, 2, (WINDOW_SIZE, WINDOW_SIZE)), [overpopulation, reproduction, underpopulation])
 renderer = Renderer(engine)
 renderer.start()

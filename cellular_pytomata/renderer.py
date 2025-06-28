@@ -1,3 +1,5 @@
+import time
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -10,6 +12,7 @@ class Renderer:
         self.paused = True
         self.adding_cells = False
         self._last_index = None
+        self._fps = 0
         self.figure, self.axes = plt.subplots(1, 1, figsize=(6, 6))
         self.canvas = self.figure.canvas
         self.timer = self.canvas.new_timer(interval=1)
@@ -38,8 +41,16 @@ class Renderer:
         plt.show()
         self.canvas.mpl_connect('close_event', plt.close())
 
-    def _run_step(self):
+    def _run_step(self, _last_call_time = [time.perf_counter()], _time_elapsed = [0]):
+        _time_elapsed[0] += time.perf_counter() - _last_call_time[0]
+        _last_call_time[0] = time.perf_counter()
+        self._fps += 1
+        if  _time_elapsed[0] >= 1:
+            plt.get_current_fig_manager().set_window_title(f"Cellular Pytomata - {self._fps} FPS")
+            self._fps = 0
+            _time_elapsed[0] = 0
         if self.paused:
+            self.draw()
             return
 
         self.canvas.restore_region(self.canvas.copy_from_bbox(self.axes.bbox))
@@ -60,7 +71,7 @@ class Renderer:
             plt.close()
         if event.key == 'r':
             self.engine.reset_grid()
-            self.points.set_array(self.engine.grid.flat)
+            self.points.set_array(self.engine.grid.ravel())
             self.draw()
         if event.key == 'right':
             if self.paused:
@@ -70,7 +81,7 @@ class Renderer:
 
     def _handle_mouse_interaction(self, event):
 
-        if not self.paused and not (self.adding_cells or self.adding_cells):
+        if not self.paused and not self.adding_cells:
             return
 
         if not event.inaxes:
@@ -86,3 +97,4 @@ class Renderer:
             self.engine.grid = grid.reshape(self.engine.grid.shape)
             self.points.set_array(grid / grid.max())
             self.draw()
+            self._last_index = index
